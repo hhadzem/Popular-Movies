@@ -1,9 +1,13 @@
-package com.hadzem.mojaaplikacija.Classes;
+package com.hadzem.mojaaplikacija.classes;
+
+import android.content.Context;
+
+import com.hadzem.mojaaplikacija.R;
 
 /**
  * Created by hadze_000 on 10/31/2015.
  */
-public class Movies {
+public class Movie {
     private boolean adult;
     private String backdrop_path;
     private int id;
@@ -18,6 +22,9 @@ public class Movies {
     private double vote_average;
     private int vote_count;
 
+    public String getPosterUrl(Context mContext, String resolution){
+        return mContext.getString(R.string.image_base_link) + resolution + this.poster_path;
+    }
 
     public boolean isAdult() {
         return adult;

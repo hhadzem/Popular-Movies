@@ -1,14 +1,13 @@
-package com.hadzem.mojaaplikacija.Classes;
+package com.hadzem.mojaaplikacija.classes;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by hadze_000 on 10/31/2015.
  */
-public class MoviesDatabase {
+public class MoviesResponse {
     private int page;
-    private List<Movies> results;
+    private List<Movie> results;
 
     public int getPage() {
         return page;
@@ -18,11 +17,11 @@ public class MoviesDatabase {
         this.page = page;
     }
 
-    public List<Movies> getMovies() {
+    public List<Movie> getMovies() {
         return results;
     }
 
-    public void setMovies(List<Movies> movies) {
+    public void setMovies(List<Movie> movies) {
         this.results = movies;
     }
 }
