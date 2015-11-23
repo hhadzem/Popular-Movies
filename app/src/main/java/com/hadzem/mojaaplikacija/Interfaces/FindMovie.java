@@ -1,6 +1,6 @@
-package com.hadzem.mojaaplikacija.Interfaces;
+package com.hadzem.mojaaplikacija.interfaces;
 
-import com.hadzem.mojaaplikacija.Classes.Movies;
+import com.hadzem.mojaaplikacija.classes.Movie;
 
 import retrofit.Callback;
 import retrofit.http.GET;
@@ -12,5 +12,5 @@ import retrofit.http.Query;
  */
 public interface FindMovie {
     @GET("/movie/{id}")
-    public void getFeed(@Path("id") int id, @Query("api_key") String api_key, Callback<Movies> movie);
+    public void getFeed(@Path("id") int id, @Query("api_key") String api_key, Callback<Movie> movie);
 }

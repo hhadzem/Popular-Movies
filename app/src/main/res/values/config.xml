@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="no_internet">Cannot connect to server</string>
+    <string name="order_by_popularity">popularity.desc</string>
+    <string name="order_by_rating">vote_average.desc</string>
+    <string name="API">https://api.themoviedb.org/3</string>
+    <string name="title">Popular Movies</string>
+    <string name="details">Movie Details</string>
+</resources>

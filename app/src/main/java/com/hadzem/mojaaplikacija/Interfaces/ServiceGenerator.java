@@ -1,6 +1,6 @@
-package com.hadzem.mojaaplikacija.Interfaces;
+package com.hadzem.mojaaplikacija.interfaces;
 
-import com.hadzem.mojaaplikacija.Classes.MoviesDatabase;
+import com.hadzem.mojaaplikacija.classes.MoviesResponse;
 
 import retrofit.Callback;
 import retrofit.http.GET;
@@ -12,6 +12,6 @@ import retrofit.http.Query;
  */
 public interface ServiceGenerator{
     @GET("/discover/movie")
-    public void getFeed(@Query ("api_key") String api_key, @Query("sort_by") String sort,  Callback<MoviesDatabase> response);
-    //MoviesDatabase getFeed(@Query("api_key") String api_key );
+    public void getFeed(@Query ("api_key") String api_key, @Query("sort_by") String sort, @Query("page") String pageNum,  Callback<MoviesResponse> response);
+    //MoviesResponse getFeed(@Query("api_key") String api_key );
 }

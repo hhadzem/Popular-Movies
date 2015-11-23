@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hadzem.mojaaplikacija.Fragments;
+package com.hadzem.mojaaplikacija.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -28,10 +28,12 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
-import com.hadzem.mojaaplikacija.Adapters.ImageAdapter;
-import com.hadzem.mojaaplikacija.Interfaces.ServiceGenerator;
+import com.hadzem.mojaaplikacija.adapters.ImageAdapter;
+import com.hadzem.mojaaplikacija.classes.ApiManager;
+import com.hadzem.mojaaplikacija.classes.ImageSizes;
+import com.hadzem.mojaaplikacija.classes.MoviesResponse;
+import com.hadzem.mojaaplikacija.interfaces.ServiceGenerator;
 import com.hadzem.mojaaplikacija.MainActivity;
-import com.hadzem.mojaaplikacija.Classes.MoviesDatabase;
 import com.hadzem.mojaaplikacija.R;
 
 import java.util.ArrayList;
@@ -43,48 +45,75 @@ import retrofit.client.Response;
 
 public class HeadlinesFragment extends Fragment {
     private View inflatedView;
-    private MoviesDatabase moviesDatabase;
+    private GridView gridView;
+
     public View getInflatedView(){
         return inflatedView;
     }
-    private ArrayList<String> images = null;
-    private Handler mHandler = new Handler();
-    private GridView gridView;
-    private boolean finished;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        moviesDatabase = new MoviesDatabase();
-        inflatedView = inflater.inflate(R.layout.main_menu_grid, container, false);
         refreshFeed();
+        inflatedView = inflater.inflate(R.layout.main_menu_grid, container, false);
+        if( savedInstanceState != null)
+            if( gridView != null)
+                gridView.setVerticalScrollbarPosition(savedInstanceState.getInt("POSITION"));
         return inflatedView;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle state){
+        super.onSaveInstanceState(state);
+        if( gridView != null) {
+            int position = gridView.getFirstVisiblePosition();
+            state.putInt("POSITION", position);
+        }
+    }
+
     public void refreshFeed(){
-        String API = "https://api.themoviedb.org/3";
-        RestAdapter restAdapter = new RestAdapter.Builder().setEndpoint(API).build();
-        ServiceGenerator api = restAdapter.create(ServiceGenerator.class);
+        ServiceGenerator api = ApiManager.getAdapter(getContext()).create(ServiceGenerator.class);
 
+        String page = "1";
 
-        String SORT_ORDER = "popularity.desc";
-        String SORT_ORDER_2 = "vote_average.desc";
-
-        api.getFeed(getActivity().getString(R.string.API_KEY), SORT_ORDER, new Callback<MoviesDatabase>() {
+        api.getFeed(getActivity().getString(R.string.API_KEY), getContext().getString(R.string.order_by_popularity), page, new Callback<MoviesResponse>() {
             @Override
-            public void success(MoviesDatabase _moviesDatabase, Response response) {
-                moviesDatabase = _moviesDatabase;
+            public void success(final MoviesResponse _moviesResponse, Response response) {
                 gridView = (GridView) inflatedView.findViewById(R.id.gridview);
                 ArrayList<String> images = new ArrayList<>();
 
-                for (int i = 0; i < _moviesDatabase.getMovies().size(); i++)
-                    images.add(_moviesDatabase.getMovies().get(i).getPoster_path());
-                Log.d("CHECKIN", "DOSAO");
+                for (int i = 0; i < _moviesResponse.getMovies().size(); i++)
+                    images.add(_moviesResponse.getMovies().get(i).getPosterUrl(getContext(), ImageSizes.IMAGE_RESOLUTION_154));
+
                 gridView.setAdapter(new ImageAdapter(getActivity(), images));
+
+                Log.d("IMAGE", images.get(2));
+
+                gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    public void onItemClick(AdapterView<?> parent, View v,
+                                            int position, long id) {
+                        if( getActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null){
+                            ArticleFragment newFragment = new ArticleFragment();
+                            Bundle arguments = new Bundle();
+                            arguments.putInt("ID", _moviesResponse.getMovies().get(position).getId());
+
+                            newFragment.setArguments(arguments);
+
+                            FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+                            transaction.replace(R.id.fragment_container, newFragment);
+                            transaction.addToBackStack(null);
+                            transaction.commit();
+                        }
+                        else{
+                            ArticleFragment article = (ArticleFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.article);
+                            article.updateArticleView(_moviesResponse.getMovies().get(position).getId());
+                        }
+                    }
+                });
             }
             @Override
             public void failure(RetrofitError error) {
-                Toast.makeText(getContext(), "Can't connect to server", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), getContext().getString(R.string.no_internet), Toast.LENGTH_LONG).show();
                 Log.d("FEED", error.getMessage());
             }
         });
@@ -97,7 +126,7 @@ public class HeadlinesFragment extends Fragment {
         super.onStart();
         if(getActivity().findViewById(R.id.fragment_container) != null) {
             MainActivity main = (MainActivity) getActivity();
-            main.getSupportActionBar().setTitle("Popular Movies");
+            main.getSupportActionBar().setTitle(getContext().getString(R.string.title));
             main.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         }
     }
@@ -108,6 +137,12 @@ public class HeadlinesFragment extends Fragment {
 
         // This makes sure that the container activity has implemented
         // the callback interface. If not, it throws an exception.
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+
     }
 
 }

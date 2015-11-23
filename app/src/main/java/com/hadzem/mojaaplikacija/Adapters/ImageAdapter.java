@@ -1,26 +1,14 @@
-package com.hadzem.mojaaplikacija.Adapters;
+package com.hadzem.mojaaplikacija.adapters;
 
-import android.app.ActionBar;
 import android.content.Context;
-import android.media.Image;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.BaseAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
 
-import com.hadzem.mojaaplikacija.Classes.ImageSizes;
-import com.hadzem.mojaaplikacija.R;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-
-import retrofit.Callback;
-import retrofit.RestAdapter;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 
 /**
  * Created by hadze_000 on 10/24/2015.
@@ -53,17 +41,17 @@ public class ImageAdapter extends BaseAdapter{
     public View getView(int position, View convertView, ViewGroup parent){
         if(convertView == null){
             imageView = new ImageView(mContext);
+           // imageView.setLayoutParams(new GridView.LayoutParams(GridView.LayoutParams.MATCH_PARENT, 500));
             imageView.setAdjustViewBounds(true);
-           // imageView.setMaxHeight((int) mContext.getResources().getDimension(R.dimen.image_height)) ;
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         } else{
             imageView = (ImageView) convertView;
         }
         if(position >= images.size() ) return imageView;
-        link = images.get(position);
+        Picasso.with(mContext).load(images.get(position)).into(imageView);
 
-        Picasso.with(mContext).load(mContext.getString(R.string.image_base_link) + ImageSizes.IMAGE_RESOLUTION_185+ link).into(imageView);
         //Picasso.with(mContext).load(mThumbIds[position]).into(imageView);
         return imageView;
     }
+
 }
