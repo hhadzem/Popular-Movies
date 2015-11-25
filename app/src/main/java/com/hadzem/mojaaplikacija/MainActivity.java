@@ -1,5 +1,6 @@
 package com.hadzem.mojaaplikacija;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -14,27 +15,20 @@ import com.hadzem.mojaaplikacija.fragments.HeadlinesFragment;
 
 
 public class MainActivity extends AppCompatActivity {
-    /** Called when the activity is first created. */
-    HeadlinesFragment firstFragment;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.news_articles);
 
         if (findViewById(R.id.fragment_container) != null) {
-            if (savedInstanceState != null) {
-                return;
-            }
-            firstFragment = new HeadlinesFragment();
-            firstFragment.setArguments(getIntent().getExtras());
-
+            HeadlinesFragment firstFragment = new HeadlinesFragment();
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.replace(R.id.fragment_container, firstFragment);
             transaction.addToBackStack(null);
             transaction.commit();
         }
     }
+
 
     @Override
     public void onBackPressed(){
@@ -61,13 +55,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onPause(){
-        super.onPause();
-    }
-
     public boolean onCreateOptionsMenu(Menu menu){
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        SharedPreferences pref = getSharedPreferences(getString(R.string.pref_file), 0);
+        String order = pref.getString("order", getString(R.string.order_by_rating));
+        if( order.equals(getString(R.string.order_by_rating)) )
+            menu.findItem(R.id.top_rated).setChecked(true);
+        else
+            menu.findItem(R.id.most_popular).setChecked(true);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -87,8 +82,28 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_refresh:
                 if( getFragment() instanceof HeadlinesFragment )
                     ((HeadlinesFragment) getFragment()).refreshFeed();
-                else
+                else if( getFragment() instanceof ArticleFragment)
                     ((ArticleFragment) getFragment()).refreshFeed();
+                break;
+            case R.id.top_rated:
+                SharedPreferences pref = getSharedPreferences(getString(R.string.pref_file), 0);
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putString("order", getString(R.string.order_by_rating));
+                editor.apply();
+                if( getFragment() instanceof ArticleFragment)
+                    onBackPressed();
+                ( (HeadlinesFragment) getFragment()).refreshFeed();
+                item.setChecked(true);
+                break;
+            case R.id.most_popular:
+                pref = getSharedPreferences(getString(R.string.pref_file),0);
+                editor = pref.edit();
+                editor.putString("order", getString(R.string.order_by_popularity));
+                editor.apply();
+                if( getFragment() instanceof ArticleFragment)
+                    onBackPressed();
+                ( (HeadlinesFragment) getFragment()).refreshFeed();
+                item.setChecked(true);
                 break;
         }
         return true;
