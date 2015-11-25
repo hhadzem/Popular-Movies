@@ -1,11 +1,12 @@
 package com.hadzem.mojaaplikacija.classes;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by hadze_000 on 10/31/2015.
  */
-public class MoviesResponse {
+public class MoviesResponse implements Serializable{
     private int page;
     private List<Movie> results;
 

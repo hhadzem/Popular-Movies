@@ -16,6 +16,7 @@
 package com.hadzem.mojaaplikacija.fragments;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -46,79 +47,91 @@ import retrofit.client.Response;
 public class HeadlinesFragment extends Fragment {
     private View inflatedView;
     private GridView gridView;
-
+    private MoviesResponse moviesResponse;
+    private int currentPosition = 0;
     public View getInflatedView(){
         return inflatedView;
     }
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        refreshFeed();
+
         inflatedView = inflater.inflate(R.layout.main_menu_grid, container, false);
-        if( savedInstanceState != null)
-            if( gridView != null)
-                gridView.setVerticalScrollbarPosition(savedInstanceState.getInt("POSITION"));
+        if(moviesResponse == null) refreshFeed();
+        else makeGrid(moviesResponse);
+
         return inflatedView;
     }
 
     @Override
     public void onSaveInstanceState(Bundle state){
         super.onSaveInstanceState(state);
-        if( gridView != null) {
-            int position = gridView.getFirstVisiblePosition();
-            state.putInt("POSITION", position);
-        }
+        state.putSerializable("movies", moviesResponse);
     }
 
     public void refreshFeed(){
+        SharedPreferences pref = getActivity().getSharedPreferences(getString(R.string.pref_file), 0);
+        String order = pref.getString("order", getString(R.string.order_by_rating));
+
         ServiceGenerator api = ApiManager.getAdapter(getContext()).create(ServiceGenerator.class);
-
         String page = "1";
-
-        api.getFeed(getActivity().getString(R.string.API_KEY), getContext().getString(R.string.order_by_popularity), page, new Callback<MoviesResponse>() {
+        api.getFeed(getActivity().getString(R.string.API_KEY), order, page, new Callback<MoviesResponse>() {
             @Override
             public void success(final MoviesResponse _moviesResponse, Response response) {
-                gridView = (GridView) inflatedView.findViewById(R.id.gridview);
-                ArrayList<String> images = new ArrayList<>();
-
-                for (int i = 0; i < _moviesResponse.getMovies().size(); i++)
-                    images.add(_moviesResponse.getMovies().get(i).getPosterUrl(getContext(), ImageSizes.IMAGE_RESOLUTION_154));
-
-                gridView.setAdapter(new ImageAdapter(getActivity(), images));
-
-                Log.d("IMAGE", images.get(2));
-
-                gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    public void onItemClick(AdapterView<?> parent, View v,
-                                            int position, long id) {
-                        if( getActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null){
-                            ArticleFragment newFragment = new ArticleFragment();
-                            Bundle arguments = new Bundle();
-                            arguments.putInt("ID", _moviesResponse.getMovies().get(position).getId());
-
-                            newFragment.setArguments(arguments);
-
-                            FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-                            transaction.replace(R.id.fragment_container, newFragment);
-                            transaction.addToBackStack(null);
-                            transaction.commit();
-                        }
-                        else{
-                            ArticleFragment article = (ArticleFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.article);
-                            article.updateArticleView(_moviesResponse.getMovies().get(position).getId());
-                        }
-                    }
-                });
+                makeGrid(_moviesResponse);
             }
+
             @Override
             public void failure(RetrofitError error) {
                 Toast.makeText(getContext(), getContext().getString(R.string.no_internet), Toast.LENGTH_LONG).show();
                 Log.d("FEED", error.getMessage());
             }
         });
+    }
 
+    private void makeGrid(final MoviesResponse _moviesResponse){
+        moviesResponse = _moviesResponse;
+        gridView = (GridView) inflatedView.findViewById(R.id.gridview);
+        ArrayList<String> images = new ArrayList<>();
 
+        for (int i = 0; i < _moviesResponse.getMovies().size(); i++)
+            images.add(_moviesResponse.getMovies().get(i).getPosterUrl(getContext(), ImageSizes.IMAGE_RESOLUTION_154));
+
+        gridView.setAdapter(new ImageAdapter(getActivity(), images));
+        gridView.smoothScrollToPosition(currentPosition);
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v,
+                                    int position, long id) {
+                currentPosition = position;
+                if (getActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
+                    ArticleFragment newFragment = new ArticleFragment();
+                    Bundle arguments = new Bundle();
+                    arguments.putInt("position", position);
+                    arguments.putSerializable("movies", _moviesResponse);
+                    newFragment.setArguments(arguments);
+
+                    FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+                    transaction.replace(R.id.fragment_container, newFragment);
+                    transaction.addToBackStack(null);
+                    transaction.commit();
+                } else {
+                    ArticleFragment article = (ArticleFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.article);
+                    Bundle arguments = new Bundle();
+                    arguments.putInt("position", position);
+                    arguments.putSerializable("movies", _moviesResponse);
+                    article.setPosition(arguments);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        if(moviesResponse != null)
+        makeGrid(moviesResponse);
     }
 
     @Override
@@ -130,19 +143,4 @@ public class HeadlinesFragment extends Fragment {
             main.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         }
     }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception.
-    }
-
-    @Override
-    public void onPause(){
-        super.onPause();
-
-    }
-
 }

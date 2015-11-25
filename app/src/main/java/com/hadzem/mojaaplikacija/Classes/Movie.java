@@ -4,10 +4,12 @@ import android.content.Context;
 
 import com.hadzem.mojaaplikacija.R;
 
+import java.io.Serializable;
+
 /**
  * Created by hadze_000 on 10/31/2015.
  */
-public class Movie {
+public class Movie implements Serializable{
     private boolean adult;
     private String backdrop_path;
     private int id;
