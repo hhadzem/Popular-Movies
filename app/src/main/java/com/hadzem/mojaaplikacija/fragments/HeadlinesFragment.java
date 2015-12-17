@@ -15,10 +15,10 @@
  */
 package com.hadzem.mojaaplikacija.fragments;
 
-import android.app.Activity;
+import android.content.ContentValues;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
@@ -29,18 +29,27 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
+
 import com.hadzem.mojaaplikacija.adapters.ImageAdapter;
 import com.hadzem.mojaaplikacija.classes.ApiManager;
 import com.hadzem.mojaaplikacija.classes.ImageSizes;
+import com.hadzem.mojaaplikacija.classes.LinkResponse;
+import com.hadzem.mojaaplikacija.classes.Movie;
+import com.hadzem.mojaaplikacija.classes.MoviesProvider;
 import com.hadzem.mojaaplikacija.classes.MoviesResponse;
+import com.hadzem.mojaaplikacija.classes.Review;
+import com.hadzem.mojaaplikacija.classes.ReviewsResponse;
+import com.hadzem.mojaaplikacija.classes.videoLink;
+import com.hadzem.mojaaplikacija.interfaces.FindMovie;
 import com.hadzem.mojaaplikacija.interfaces.ServiceGenerator;
 import com.hadzem.mojaaplikacija.MainActivity;
 import com.hadzem.mojaaplikacija.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import retrofit.Callback;
-import retrofit.RestAdapter;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
@@ -71,24 +80,70 @@ public class HeadlinesFragment extends Fragment {
         state.putSerializable("movies", moviesResponse);
     }
 
+    private void favoritesRefreshFeed(){
+        MoviesResponse mResponse = new MoviesResponse();
+        ArrayList<Movie> lista = new ArrayList<Movie>();
+        Cursor result = getContext().getContentResolver().query(
+                MoviesProvider.MoviesContract.CONTENT_URI, null,  null, null, null);
+        while(result.moveToNext()){
+            Movie movie = new Movie();
+            movie.setId(Integer.parseInt(result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.ID))));
+            movie.setTitle(result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.TITLE)));
+            movie.setOverview(result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.OVERVIEW)));
+            movie.setRelease_date(result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.RELEASE_DATE)));
+            movie.setVote_average(Double.parseDouble(result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.POPULARITY))));
+            movie.setPoster_path(result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.IMAGE_URL_PATH)));
+
+            String links = result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.TRAILER_LINKS));
+            ArrayList<videoLink> videoLinks = new ArrayList<>();
+            List<String> linksArr = Arrays.asList(links.split(","));
+            for(int i = 0 ; i < linksArr.size(); i++){
+                videoLink v = new videoLink();
+                v.setKey(linksArr.get(i));
+                videoLinks.add(v);
+            }
+            movie.setLinks(videoLinks);
+
+            String reviews = result.getString(result.getColumnIndex(MoviesProvider.MoviesContract.REVIEWS));
+            ArrayList<Review> rev = new ArrayList<>();
+            List<String> revArr = Arrays.asList(reviews.split("__,__"));
+            for(int i = 0 ; i < revArr.size(); i++){
+                Review r = new Review();
+                r.setContent(revArr.get(i));
+                rev.add(r);
+            }
+            movie.setReviews(rev);
+
+            lista.add(movie);
+        }
+        result.close();
+        mResponse.setMovies(lista);
+        makeGrid(mResponse);
+    }
+
     public void refreshFeed(){
         SharedPreferences pref = getActivity().getSharedPreferences(getString(R.string.pref_file), 0);
         String order = pref.getString("order", getString(R.string.order_by_rating));
 
-        ServiceGenerator api = ApiManager.getAdapter(getContext()).create(ServiceGenerator.class);
-        String page = "1";
-        api.getFeed(getActivity().getString(R.string.API_KEY), order, page, new Callback<MoviesResponse>() {
-            @Override
-            public void success(final MoviesResponse _moviesResponse, Response response) {
-                makeGrid(_moviesResponse);
-            }
+        if( order.equals(getString(R.string.favorites))){
+            favoritesRefreshFeed();
+        }
+        else {
+            ServiceGenerator api = ApiManager.getAdapter(getContext()).create(ServiceGenerator.class);
+            String page = "1";
+            api.getFeed(getActivity().getString(R.string.API_KEY), order, page, new Callback<MoviesResponse>() {
+                @Override
+                public void success(final MoviesResponse _moviesResponse, Response response) {
+                    makeGrid(_moviesResponse);
+                }
 
-            @Override
-            public void failure(RetrofitError error) {
-                Toast.makeText(getContext(), getContext().getString(R.string.no_internet), Toast.LENGTH_LONG).show();
-                Log.d("FEED", error.getMessage());
-            }
-        });
+                @Override
+                public void failure(RetrofitError error) {
+                    Toast.makeText(getContext(), getContext().getString(R.string.no_internet), Toast.LENGTH_LONG).show();
+                    Log.d("FEED", error.getMessage());
+                }
+            });
+        }
     }
 
     private void makeGrid(final MoviesResponse _moviesResponse){
@@ -100,7 +155,8 @@ public class HeadlinesFragment extends Fragment {
             images.add(_moviesResponse.getMovies().get(i).getPosterUrl(getContext(), ImageSizes.IMAGE_RESOLUTION_154));
 
         gridView.setAdapter(new ImageAdapter(getActivity(), images));
-        gridView.smoothScrollToPosition(currentPosition);
+        gridView.setSelection(currentPosition);
+        //gridView.smoothScrollToPosition(currentPosition);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {

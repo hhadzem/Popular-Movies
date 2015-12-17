@@ -15,9 +15,15 @@ import com.hadzem.mojaaplikacija.fragments.HeadlinesFragment;
 
 
 public class MainActivity extends AppCompatActivity {
+    private void deleteDatabase(){
+        getApplicationContext().deleteDatabase("MoviesDatabase_test");
+        getApplicationContext().deleteDatabase("MoviesDatabase");
+        getApplicationContext().deleteDatabase("MoviesDatabase_testing");
+    }
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //deleteDatabase();
         setContentView(R.layout.news_articles);
 
         if (findViewById(R.id.fragment_container) != null) {
@@ -61,8 +67,10 @@ public class MainActivity extends AppCompatActivity {
         String order = pref.getString("order", getString(R.string.order_by_rating));
         if( order.equals(getString(R.string.order_by_rating)) )
             menu.findItem(R.id.top_rated).setChecked(true);
-        else
+        else if(order.equals(R.string.most_popular))
             menu.findItem(R.id.most_popular).setChecked(true);
+        else
+            menu.findItem(R.id.favorites).setChecked(true);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -96,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                 item.setChecked(true);
                 break;
             case R.id.most_popular:
-                pref = getSharedPreferences(getString(R.string.pref_file),0);
+                pref = getSharedPreferences(getString(R.string.pref_file), 0);
                 editor = pref.edit();
                 editor.putString("order", getString(R.string.order_by_popularity));
                 editor.apply();
@@ -105,7 +113,18 @@ public class MainActivity extends AppCompatActivity {
                 ( (HeadlinesFragment) getFragment()).refreshFeed();
                 item.setChecked(true);
                 break;
+            case R.id.favorites:
+                pref = getSharedPreferences(getString(R.string.pref_file), 0);
+                editor = pref.edit();
+                editor.putString("order", getString(R.string.favorites));
+                editor.apply();
+                if(getFragment() instanceof ArticleFragment)
+                    onBackPressed();
+                ((HeadlinesFragment) getFragment()).refreshFeed();
+                item.setChecked(true);
+                break;
         }
+
         return true;
     }
 }

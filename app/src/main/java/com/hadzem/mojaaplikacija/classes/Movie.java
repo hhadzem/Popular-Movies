@@ -5,6 +5,7 @@ import android.content.Context;
 import com.hadzem.mojaaplikacija.R;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * Created by hadze_000 on 10/31/2015.
@@ -23,7 +24,21 @@ public class Movie implements Serializable{
     private boolean video;
     private double vote_average;
     private int vote_count;
+    private ArrayList<videoLink> links = new ArrayList<videoLink>();
+    private ArrayList<Review> reviews = new ArrayList<Review>();
 
+    public void setLinks(ArrayList<videoLink> l){
+        links = l;
+    }
+    public void setReviews(ArrayList<Review> r){
+        reviews = r;
+    }
+    public ArrayList<videoLink> getLinks(){
+        return links;
+    }
+    public ArrayList<Review> getReviews(){
+        return reviews;
+    }
     public String getPosterUrl(Context mContext, String resolution){
         return mContext.getString(R.string.image_base_link) + resolution + this.poster_path;
     }

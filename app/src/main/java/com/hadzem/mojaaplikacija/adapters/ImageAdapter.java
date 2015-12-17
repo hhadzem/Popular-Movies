@@ -49,8 +49,6 @@ public class ImageAdapter extends BaseAdapter{
         }
         if(position >= images.size() ) return imageView;
         Picasso.with(mContext).load(images.get(position)).into(imageView);
-
-        //Picasso.with(mContext).load(mThumbIds[position]).into(imageView);
         return imageView;
     }
 

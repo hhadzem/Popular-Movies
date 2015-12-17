@@ -35,6 +35,12 @@ limitations under the License.
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:authorities="com.hadzem.mojaaplikacija"
+            android:name="com.hadzem.mojaaplikacija.classes.MoviesProvider">
+        </provider>
+
     </application>
 
 </manifest>
